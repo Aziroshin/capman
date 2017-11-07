@@ -1,2 +1,2 @@
 # mntools
-Various tools to manager masternodes.
+Various tools to manage masternodes.
