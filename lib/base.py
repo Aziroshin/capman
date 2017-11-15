@@ -15,6 +15,19 @@ import configparser
 # Library
 #=======================================================================================
 
+#==========================================================
+# Exceptions
+#==========================================================
+
+#==========================================================
+class ConfigFileNotFound(Exception):
+	def __init__(self, message):
+		super().__init__(message)
+
+#==========================================================
+# Base Classes
+#==========================================================
+
 class Namespace (argparse.Namespace):
 	"""Pure namespace class.
 	Basically serves as a dot-notation oriented dict.
@@ -82,8 +95,25 @@ class ConfigOptionType(object):
 	procedures applied to the associated option and its value."""
 	#=============================
 	
-	def process(self):
+	# Default behaviour
+	skipNone=True
+	
+	def __init__(self, skipNone=skipNone):
+		"""Please always specify keyword parameters to this method explicitely, their order might change."""
+		self.skipNone=skipNone
+	
+	def _procedure(self, value):
 		pass#OVERRIDE
+	
+	def process(self, value):
+		if self.skipNone:
+			if not value == None:
+				processedValue = self._procedure(value)
+			else:
+				processedValue = value # 'value' ought always to equal 'None' in this case, logically.
+		else:
+				processedValue = self._procedure(value)
+		return processedValue
 
 class ConfigOptionFilePathType(ConfigOptionType):
 
@@ -91,7 +121,7 @@ class ConfigOptionFilePathType(ConfigOptionType):
 	"""A basic class for various file path options."""
 	#=============================
 	
-	pass#TODO
+	pass
 
 #==========================================================
 class ConfigOptionCanonicalizedFilePathType(ConfigOptionFilePathType):
@@ -100,10 +130,12 @@ class ConfigOptionCanonicalizedFilePathType(ConfigOptionFilePathType):
 	"""A file path option that is supposed to end up with a canonical path."""
 	#=============================
 	
-	def process(self, value):
+	def _procedure(self, value):
 		"""Processes file path options into canonical paths, resolving the given path towards that end.
 		For example: ~ gets expanded into the user home directory, redundant instances of
 		"." or ".." in the file path get eliminated, etc."""
+		
+		return os.path.normpath(os.path.expanduser(value))
 		
 
 #==========================================================
@@ -147,13 +179,6 @@ class ConfigOption(object):
 		self.category = category
 		self.defaultValue = defaultValue
 		self.optionType = optionType
-	
-	def processPathType(self, value):
-		"""Processes path type option values and resturns the processed results."""
-		pass#TODO
-	
-	def processValueAccordingToType(self, value):
-		"""Check specified value according to the type this option is configured as."""
 
 #==========================================================
 class ConfigSetup(object):
@@ -197,13 +222,17 @@ class ConfigSetup(object):
 				configFileOptions[varName] = option
 		return configFileOptions
 	
-	def putValueIntoConfig(self, config, parameterName, value):
+	def putValueIntoConfig(self, option, config, value):
 		"""Add a config option and its value to a 'Config' object."""
-		config.__dict__[parameterName] = value
+		if option.optionType == None:
+			processedValue = value
+		else:
+			processedValue = option.optionType.process(value)
+		config.__dict__[option.varName] = processedValue
 
 	def putDefaultValuesIntoConfig(self, config):
 		for varName, option in self.options.items():
-			self.putValueIntoConfig(config=config, parameterName=varName, value=option.defaultValue)
+			self.putValueIntoConfig(option=option, config=config, value=option.defaultValue)
 
 	def putArgsIntoConfig(self, config, argObject):
 		"""Parse an argparse object and put its values into the specified 'Config' instance.
@@ -213,8 +242,8 @@ class ConfigSetup(object):
 		for varName, option in self.commandLineOptions.items():
 			if varName in argObject.__dict__.keys():
 				self.putValueIntoConfig(\
+					option=option,\
 					config=config,\
-					parameterName=varName,\
 					value=argObject.__dict__[varName])
 
 	def putConfigFileValuesIntoConfig(self, config, configFilePath):
@@ -225,18 +254,22 @@ class ConfigSetup(object):
 			if option.category in fileConfig:
 				if option.configName in fileConfig[option.category].keys():
 					self.putValueIntoConfig(\
+						option=option,\
 						config=config,\
-						parameterName=varName,\
 						value=fileConfig[option.category][option.configName])
-		
 	def getConfig(self, argObjects=[], configFilePaths=[], config=Config()):
 		"""Gets a 'Config' object initialized according to the specified arguments and config files.
 		The 'argObjects' and 'configFilePaths' parameters both take lists, whereas the specified items
 		are parsed in list order with each item overriding the former one."""
 		config = config
+		print("[DEBUG][configSetup]", configFilePaths)
 		self.putDefaultValuesIntoConfig(config)
 		for configFilePath in configFilePaths:
-			self.putConfigFileValuesIntoConfig(config=config, configFilePath=configFilePath)
+			if os.path.exists(configFilePath):
+				self.putConfigFileValuesIntoConfig(config=config, configFilePath=configFilePath)
+			else:
+				raise ConfigFileNotFound("The following configuration file path was specified but couldn't be found: {configFilePath}"\
+					.format(configFilePath=configFilePath))
 		for argObject in argObjects:
 			self.putArgsIntoConfig(config=config, argObject=argObject)
 		return config
@@ -245,13 +278,13 @@ class DefaultsConfigSetup(ConfigSetup):
 	"""'ConfigSetup' for general defaults for wallet manager."""
 	def __init__(self):
 		super().__init__()
-		self.addOption(ConfigOption(varName="walletConfigDirPath", configName="walletconfigdir", optionType=ConfigOptionFilePathType()))
+		self.addOption(ConfigOption(varName="walletConfigDirPath", configName="walletconfigdir", optionType=ConfigOptionCanonicalizedFilePathType()))
 
 class Defaults(Namespace):
 	"""Wallet Manager default config."""
 	def __init__(self):
 		binDir = os.path.realpath(os.path.dirname(sys.argv[0]))
-		config = DefaultsConfigSetup().getConfig(configFilePaths=[os.path.join(binDir, "walletmanager.conf")])
+		config = DefaultsConfigSetup().getConfig(configFilePaths=[os.path.join(os.path.join(binDir, "config"), "capman.conf")])
 		self.walletConfigDirPath = config.walletConfigDirPath
 
 #==========================================================

@@ -15,5 +15,5 @@ from lib.base import *
 class BasicWalletConfigSetup(ConfigSetup):
 	def __init__(self):
 		super().__init__()
-		self.addOption(Option(varName="walletFlavor", confName="walletflavor", category="main"))
-		self.addOption(Option(varName="name", confName="name", category="main"))
+		self.addOption(ConfigOption(varName="walletFlavor", configName="walletflavor", category="main"))
+		self.addOption(ConfigOption(varName="name", configName="name", category="main"))

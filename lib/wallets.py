@@ -40,7 +40,7 @@ class WalletLib(object):
 		
 #==========================================================
 class WalletFlavor(object):
-	def __init__(self):
+	def __init__(self, name):
 		self.name = name
 
 #==========================================================
@@ -54,10 +54,13 @@ class Wallets(object):
 		self.walletConfigDirPath = walletConfigDirPath
 	def getAll(self):
 		print("[DEBUG][wallethandler.py:Wallets:getAll]", "called. Going to probe for conf file: ", self.walletConfigDirPath, os.listdir(self.walletConfigDirPath))
-		for configFilePath in os.listdir(self.walletConfigDirPath):
+		for configFileName in os.listdir(self.walletConfigDirPath):
+			configFilePath = os.path.join(self.walletConfigDirPath, configFileName)
 			print("[DEBUG][wallethandler.py:Wallets:getAll]", "Conf file found.")
-			if configFilePath.rpartition["."][2] == "conf":
+			print("[DEBUG][wallethandler.py:Wallets:getAll]", "configFilePath: ", configFilePath)
+			if configFilePath.rpartition(".")[2] == "conf":
 				print("[DEBUG][wallethandler.py:Wallets:getAll]", "Conf file name ends with .conf.")
 				basicConfig = BasicWalletConfigSetup().getConfig(configFilePaths=[configFilePath])
-				walletLib = WalletLib(basicConfig.walletlib)
-				print("[DEBUG][wallethandler.py:Wallets:getAll]", "WalletLib chosen:", walletLib, ".")
+				print("[DEBUG][wallethandler.py:Wallets:getAll]", "basicConfig anatomy", basicConfig)
+				walletFlavor = WalletFlavor(basicConfig.walletFlavor)
+				print("[DEBUG][wallethandler.py:Wallets:getAll]", "WalletFlavor chosen:", walletFlavor.name)

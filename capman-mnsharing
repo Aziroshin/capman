@@ -8,8 +8,9 @@
 import os
 import sys
 from lib.base import *
-from lib.wallethandler import Wallets
+from lib.wallets import Wallets
 import functools
+import plugins.walletlibs.dash #TEST: plugin import.
 
 #=======================================================================================
 # Configuration
@@ -42,5 +43,6 @@ except FileExistsError:
 #=======================================================================================
 # Action
 #=======================================================================================
+print("[DEBUG][capman-mnsharing]", defaults.walletConfigDirPath)
 wallets = Wallets(defaults.walletConfigDirPath)
 wallets.getAll()
