@@ -6,6 +6,7 @@
 #=======================================================================================
 
 from lib.base import *
+from lib.configutils import ConfigSetup
 
 #=======================================================================================
 # Library
@@ -16,10 +17,10 @@ class ConfigSetup(ConfigSetup):
 	pass#TODO
 
 #==========================================================
-class BitcoinWallet(object):
+class BitcoinCapp(object):
 	
 	#=============================
-	"""Represents a Bitcoin wallet."""
+	"""Represents a Bitcoin capp."""
 	#=============================
 	
 	def __init__(self, configSetup):
@@ -46,7 +47,11 @@ class BitcoinWallet(object):
 		# All paths are dandy, nice!
 
 	def runCli(self, commandLine):
-		"""Run the command line version of the wallet with a list of command line arguments."""
+		
+		#=============================
+		"""Run the command line version of the capp with a list of command line arguments."""
+		#=============================
+		
 		if not self.confFilePath == None:
 			return Process([self.cliBinPath,\
 				"-datadir={datadir}".format(datadir=self.dataDirPath),\
@@ -57,7 +62,11 @@ class BitcoinWallet(object):
 		
 
 	def runDaemon(self, commandLine):
+		
+		#=============================
 		"""Run the daemon. Takes a list for command line arguments to it."""
+		#=============================
+		
 		if not self.confFilePath == None:
 			return Process([self.daemonBinPath,\
 				"-daemon",\
@@ -69,14 +78,17 @@ class BitcoinWallet(object):
 				"-datadir={datadir}".format(datadir=self.dataDirPath)] +commandLine)
 
 	def runCliSafe(self, commandLine, _retrying=False):
-		"""A version of .runCli that checks for the wallet tripping up and responds accordingly."""
+		
+		#=============================
+		"""A version of .runCli that checks for the capp tripping up and responds accordingly."""
+		#=============================
 		process = self.runCli(commandLine)
 		stdoutString, stderrString = process.waitAndGetOutput()
-		# Catch the wallet taking the way out because the daemon isn't running.
+		# Catch the capp taking the way out because the daemon isn't running.
 		if stderrString.decode().strip() == "error: couldn't connect to server":
-			raise WalletConnectionError(\
-				"Command line wallet can't connect to the daemon. Is the daemon running?")
-		# Catch issues caused by the wallet connecting to the daemon right after the daemon started.
+			raise CappConnectionError(\
+				"Command line capp can't connect to the daemon. Is the daemon running?")
+		# Catch issues caused by the capp connecting to the daemon right after the daemon started.
 		# As this involves retrying, we have to make sure we don't get stuck retrying forever.
 		if "error code: -28" in stdoutString.decode()\
 			or "error code: -28" in stderrString.decode()\
@@ -95,20 +107,32 @@ class BitcoinWallet(object):
 		return process
 
 	def runDaemonSafe(self, commandLine):
+		
+		#=============================
 		"""A version of .runDaemon that checks for the daemon tripping up and responds accordingly."""
+		#=============================
+		
 		process = self.runDaemon(commandLine)
 		stdoutString, stderrString = process.waitAndGetOutput()
 		#TODO: Make running the daemon safer and failures more verbose with some checks & exceptions.
 		return process
 
 	def startDaemon(self, commandLine=[]):
+		
+		#=============================
 		"""Start the daemon. Takes a list for command line arguments."""
+		#=============================
+		
 		return self.runDaemon(commandLine)
 
 	def stopDaemon(self, waitTimeout):
+		
+		#=============================
 		"""Stop the daemon.
 		The parameter 'waitTimeout' determines for how long we will wait and poll
 		for stop confirmation, in seconds."""
+		#=============================
+		
 		process = self.runCliSafe(["stop"])
 		# Wait and poll every second for daemon shutdown completion.
 		# Return once daemon shut down is confirmed.
@@ -116,7 +140,7 @@ class BitcoinWallet(object):
 			for second in range(1,waitTimeout):
 				try:
 					self.getBlockCount() # We could use anything. This will do.
-				except WalletConnectionError:
+				except CappConnectionError:
 					break
 				time.sleep(1)
 		return process
