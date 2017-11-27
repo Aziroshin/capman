@@ -113,7 +113,7 @@ class ConfigOptionCanonicalizedFilePathType(ConfigOptionFilePathType):
 		For example: ~ gets expanded into the user home directory, redundant instances of
 		"." or ".." in the file path get eliminated, etc."""
 		
-		print("[DEBUG][ConfigOptionCanonicalizedFilePathType] Turning", value, "into:", os.path.normpath(os.path.expanduser(value)))
+		#print("[DEBUG][ConfigOptionCanonicalizedFilePathType] Turning", value, "into:", os.path.normpath(os.path.expanduser(value)))
 		return os.path.normpath(os.path.expanduser(value))
 	
 #==========================================================
@@ -132,7 +132,7 @@ class ConfigOptionListType(ConfigOptionType):
 	
 	def _procedure(self, value):
 		if self.listType == "json":
-			print("[DEBUG][ConfigOptionListType]", value, "JSON:", json.loads(value))
+			#print("[DEBUG][ConfigOptionListType]", value, "JSON:", json.loads(value))
 			return json.loads(value)
 		else:
 			raise ConfigSetupError("Unrecognized list type specified: {listType}".format(listType=self.listType))
@@ -285,6 +285,7 @@ class ConfigOption(object):
 
 	def checkEnforcedAssignment(self, value):
 		if value == self.defaultValue.parameterValue:
+			#print("[DEBUG][configutils.py:ConfigOption.checkEnforcedAssignment]", "Value:", value, "|| Default value:", self.defaultValue.parameterValue)
 			raise ConfigOptionUnassignedError(FancyErrorMessage(\
 				"{eol}A configuration option isn't properly configured. The configuration option in question is comprised of the following parameters, which are listed as follows according to the context they're used in to aid you in locating the source of the problem:{eol}{eol}{configInfo}"\
 				.format(eol=os.linesep, configInfo=self.createConfiguredNamesErrorListing() ) ).string)
@@ -375,6 +376,7 @@ class ConfigSetup(object):
 		fileConfig = configparser.ConfigParser()
 		fileConfig.read(configFilePath)
 		for varName, option in self.configFileOptions.items():
+			#print("[DEBUG][configutils.py:ConfigSetup.putConfigFileValuesIntoConfig] varName: ", varName, "configName: ", option.configName.parameterValue)
 			if option.category.parameterValue in fileConfig:
 				if option.configName.parameterValue in fileConfig[option.category.parameterValue].keys():
 					self.putValueIntoConfig(\
@@ -383,6 +385,7 @@ class ConfigSetup(object):
 						value=fileConfig[option.category.parameterValue][option.configName.parameterValue])
 	def validateConfig(self, config):
 		for varName, option in self.options.items():
+			print("[configutils.py:ConfigSetup.validateConfig], varName: ", varName, "configName: ", option.configName.parameterValue, "value: ", config.__dict__[option.varName.parameterValue])
 			option.validate(config.__dict__[option.varName.parameterValue])
 
 	def getConfig(self, argObjects=[], configFilePaths=[], config=Config()):
@@ -390,7 +393,7 @@ class ConfigSetup(object):
 		The 'argObjects' and 'configFilePaths' parameters both take lists, whereas the specified items
 		are parsed in list order with each item overriding the former one."""
 		config = config
-		print("[DEBUG][configSetup]", configFilePaths)
+		#print("[DEBUG][configSetup]", configFilePaths)
 		self.putDefaultValuesIntoConfig(config)
 		for configFilePath in configFilePaths:
 			if os.path.exists(configFilePath):

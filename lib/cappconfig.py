@@ -15,7 +15,7 @@ from lib.configutils import *
 class DefaultsConfigSetup(ConfigSetup):
 	
 	#=============================
-	"""'ConfigSetup' for general defaults for capman."""
+	"""'ConfigSetup' for general defaults for cappman."""
 	#=============================
 	
 	def __init__(self):
@@ -46,5 +46,5 @@ class BasicCappConfigSetup(ConfigSetup):
 	
 	def __init__(self):
 		super().__init__()
-		self.addOption(ConfigOption(varName="cappFlavor", configName="cappflavor", category="main"))
-		self.addOption(ConfigOption(varName="name", configName="name", category="main"))
+		self.addOption(ConfigOption(varName="cappFlavor", configName="cappflavor", category="main", enforceAssignment=True))
+		self.addOption(ConfigOption(varName="name", configName="name", category="main", enforceAssignment=True))

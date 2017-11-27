@@ -8,6 +8,7 @@
 import os
 import sys
 import argparse
+import importlib
 from subprocess import Popen, PIPE
 from lib.localization import Local
 
@@ -191,13 +192,3 @@ class Process(object):
 
 	def waitAndGetStderr(self, timeout=None):
 		return self.waitAndGetOutput(timeout)[1]
-
-#==========================================================
-class Plugins(object):
-	
-	#=============================
-	"""Plugin handler which allows the finding and loading of plugins from various locations."""
-	#=============================
-	
-	def loadPlugin(self, name):
-		pass
