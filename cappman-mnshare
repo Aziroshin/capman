@@ -45,7 +45,7 @@ except FileExistsError:
 #=======================================================================================
 # Action
 #=======================================================================================
-print("[DEBUG][capman-mnsharing]", defaults.cappConfigDirPath)
+#print("[DEBUG][capman-mnsharing]", defaults.cappConfigDirPath)
 capps = Capps(defaults.cappConfigDirPath)
 allCapps = capps.getAll()
-print(allCapps)
+#print("[DEBUG][cappman-mnshare], allCapps object: ", allCapps)

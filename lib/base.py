@@ -10,23 +10,13 @@ import sys
 import argparse
 import importlib
 from subprocess import Popen, PIPE
-from lib.localization import Local
+from lib.localization import Lang
 
 #=======================================================================================
 # Localization
 #=======================================================================================
-# Problem: This will not benefit from the fancy initializations done in this module,
-# thus translation modules installed anywhere else but the default plugins directory
-# will not work for anything in this module.
-# Reason for doing it anyway: It offers the possibilty to get even the basic strings
-# in this module translated.
-# The rest of the code will use a more fancy process which will be established in
-# this module. This is the only place where we should have to do this.
 
-# Set 'autodetect' to true once 'Local' is properly implemented.
-local = Local( "cappbaselib", os.path.realpath(\
-	os.path.join(os.path.join(
-		os.path.join(os.path.dirname(sys.argv[0]), "plugins"), "languages"))), autodetect=False).gettext
+_ = Lang( "cappbaselib", autodetect=False).gettext
 
 #=======================================================================================
 # Library
@@ -43,11 +33,24 @@ class Error(Exception):
 		super().__init__(message)
 
 #==========================================================
-class ConfigFileNotFound(Error):
-	pass
+class ErrorWithCodes(Error):
+	
+	#=============================
+	"""Error with an error code for the 'errno' constructor parameter.
+	The possible error numbers are to be configured as class variables of the
+	appropriate subclass. Upon raising the error, one of these constants is
+	supposed to be passed to 'errno'. During error handling, checks are
+	supposed to use these constants as well. Never use the actual integer
+	value anywhere except when defining the class variable referencing it.
+	The convention is to use all upper case variable names for these."""
+	#=============================
+	
+	def __init__(self, message, errno):
+		super().__init__(message)
+		self.errno = errno
 
 #==========================================================
-class ConfigSetupError(Error):
+class ConfigFileNotFound(Error):
 	pass
 
 #==========================================================

@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+
 #=======================================================================================
 # Imports
 #=======================================================================================
@@ -6,19 +9,14 @@ import os
 import sys
 import configparser
 import json
-from lib.localization import Local
+from lib.localization import Lang
 from lib.base import *
 
 #=======================================================================================
 # Localization
 #=======================================================================================
-#NOTE: This is copied from base.py as a result of refactoring this code into its
-# own module. This section suffers from the same issues as it does in base.py.
 
-# Set 'autodetect' to true once 'Local' is properly implemented.
-_ = Local( "cappconfigutilslib", os.path.realpath(\
-	os.path.join(os.path.join(
-		os.path.join(os.path.dirname(sys.argv[0]), "plugins"), "languages"))), autodetect=False).gettext
+_ = Lang( "cappconfigutilslib", autodetect=False).gettext
 
 #=======================================================================================
 # Library
@@ -323,8 +321,9 @@ class ConfigSetup(object):
 	values as specified in the supplied 'ConfigOption' instances will be used."""
 	#=============================
 	
-	def __init__(self):
+	def __init__(self, configFilePaths=[]):
 		self.options = {}
+		self.configFilePaths = configFilePaths
 
 	def addOption(self, option):
 		"""Add an instance of ConfigOption to the dict of config options."""
@@ -355,9 +354,22 @@ class ConfigSetup(object):
 			processedValue = optionType.process(processedValue)
 		config.__dict__[option.varName.parameterValue] = processedValue
 
-	def putDefaultValuesIntoConfig(self, config):
+	def putDefaultValueIntoConfig(self, config, option):
 		for varName, option in self.options.items():
 			self.putValueIntoConfig(option=option, config=config, value=option.defaultValue.parameterValue)
+
+	def initializeConfigWithDefaultValues(self, config, option):
+		"""Iterate over all the configured options and initialize default values into the config as fits.
+		This will not initialize default values if the 'varName' has already been associated
+		with a value that doesn't match the default value of a non-configured default value
+		for an option, as that means that a previous 'ConfigSetup' object working on the
+		specfied 'Config' object has already initialized a value for it, which we don't want to
+		override here."""
+		for varName, option in self.options.items():
+			if hasattr(config, varName): # If not, it's not been initialized anyway, so we'll want to.
+				if getattr(config, varName) not option.defaultValue.defaultParameterValue:
+					continue # This config value's already been configured, we don't want to mess with it.
+			self.putDefaultValueIntoConfig(config)
 
 	def putArgsIntoConfig(self, config, argObject):
 		"""Parse an argparse object and put its values into the specified 'Config' instance.
@@ -385,16 +397,16 @@ class ConfigSetup(object):
 						value=fileConfig[option.category.parameterValue][option.configName.parameterValue])
 	def validateConfig(self, config):
 		for varName, option in self.options.items():
-			print("[configutils.py:ConfigSetup.validateConfig], varName: ", varName, "configName: ", option.configName.parameterValue, "value: ", config.__dict__[option.varName.parameterValue])
+			#print("[configutils.py:ConfigSetup.validateConfig], varName: ", varName, "configName: ", option.configName.parameterValue, "value: ", config.__dict__[option.varName.parameterValue])
 			option.validate(config.__dict__[option.varName.parameterValue])
 
-	def getConfig(self, argObjects=[], configFilePaths=[], config=Config()):
+	def getConfig(self, argObjects=[], configFilePaths=[], config=Config(), complementPaths=True):
 		"""Gets a 'Config' object initialized according to the specified arguments and config files.
 		The 'argObjects' and 'configFilePaths' parameters both take lists, whereas the specified items
 		are parsed in list order with each item overriding the former one."""
 		config = config
 		#print("[DEBUG][configSetup]", configFilePaths)
-		self.putDefaultValuesIntoConfig(config)
+		self.initializeConfigWithDefaultValues(config)
 		for configFilePath in configFilePaths:
 			if os.path.exists(configFilePath):
 				self.putConfigFileValuesIntoConfig(config=config, configFilePath=configFilePath)

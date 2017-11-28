@@ -6,6 +6,7 @@
 #=======================================================================================
 
 from lib.base import *
+from lib.capplib import *
 from lib.configutils import ConfigSetup
 
 #=======================================================================================
@@ -13,52 +14,50 @@ from lib.configutils import ConfigSetup
 #=======================================================================================
 
 #==========================================================
-class ConfigSetup(ConfigSetup):
+class BitcoinFlavorConfigSetup(ConfigSetup):
 	pass#TODO
 
 #==========================================================
-class BitcoinCapp(object):
+class BitcoinCappConfigSetup(FlavorConfigSetup):
+	pass#TODO
+
+#==========================================================
+class BitcoinCapp(BaseCapp):
 	
 	#=============================
 	"""Represents a Bitcoin capp."""
 	#=============================
 	
-	def __init__(self, configSetup):
-		self.configSetup = configSetup
-		self.config = configSetup.getConfig()
-		self.currency = self.config.currency
-		self.cliBinPath = self.config.cliBinPath
-		self.daemonBinPath = self.config.daemonBinPath
-		self.confFilePath = self.config.confFilePath
-		self.dataDirPath = self.config.dataDirPath
+	def __init__(self, configSetup, flavor=None):
+		super().__init__(self, configSetup, flavor, flavorConfigSetup):
 		# Check path sanity.
 		batchPathExistenceCheck = BatchPathExistenceCheck()
-		batchPathExistenceCheck.addPath(self.cliBinPath, "cli-bin path: {path}".format(\
-			path=self.cliBinPath))
-		batchPathExistenceCheck.addPath(self.daemonBinPath, "daemon-bin path: {path}".format(\
-			path=self.daemonBinPath))
-		batchPathExistenceCheck.addPath(self.dataDirPath, "datadir path: {path}".format(\
-			path=self.dataDirPath))
-		if not self.confFilePath == None:
+		batchPathExistenceCheck.addPath(self.config.cliBinPath, "cli-bin path: {path}".format(\
+			path=self.config.cliBinPath))
+		batchPathExistenceCheck.addPath(self.config.daemonBinPath, "daemon-bin path: {path}".format(\
+			path=self.config.daemonBinPath))
+		batchPathExistenceCheck.addPath(self.config.dataDirPath, "datadir path: {path}".format(\
+			path=self.config.dataDirPath))
+		if not self.config.confFilePath == None:
 			# A conf file path got specified; check too.
-			batchPathExistenceCheck.addPath(self.confFilePath, "conf-file path: {path}".format(\
-				path=self.confFilePath))
+			batchPathExistenceCheck.addPath(self.config.confFilePath, "conf-file path: {path}".format(\
+				path=self.config.confFilePath))
 		batchPathExistenceCheck.checkAll()
 		# All paths are dandy, nice!
-
+		
 	def runCli(self, commandLine):
 		
 		#=============================
 		"""Run the command line version of the capp with a list of command line arguments."""
 		#=============================
 		
-		if not self.confFilePath == None:
-			return Process([self.cliBinPath,\
-				"-datadir={datadir}".format(datadir=self.dataDirPath),\
-				"-conf={confFilePath}".format(confFilePath=self.confFilePath)] + commandLine)
+		if not self.config.confFilePath == None:
+			return Process([self.config.cliBinPath,\
+				"-datadir={datadir}".format(datadir=self.config.dataDirPath),\
+				"-conf={confFilePath}".format(confFilePath=self.config.confFilePath)] + commandLine)
 		else:
-			return Process([self.cliBinPath,\
-				"-datadir={datadir}".format(datadir=self.dataDirPath)] + commandLine)
+			return Process([self.config.cliBinPath,\
+				"-datadir={datadir}".format(datadir=self.config.dataDirPath)] + commandLine)
 		
 
 	def runDaemon(self, commandLine):
@@ -67,15 +66,15 @@ class BitcoinCapp(object):
 		"""Run the daemon. Takes a list for command line arguments to it."""
 		#=============================
 		
-		if not self.confFilePath == None:
-			return Process([self.daemonBinPath,\
+		if not self.config.confFilePath == None:
+			return Process([self.config.daemonBinPath,\
 				"-daemon",\
-				"-datadir={datadir}".format(datadir=self.dataDirPath),\
-				"-conf={confFilePath}".format(confFilePath=self.confFilePath)] +commandLine)
+				"-datadir={datadir}".format(datadir=self.config.dataDirPath),\
+				"-conf={confFilePath}".format(confFilePath=self.config.confFilePath)] +commandLine)
 		else:
-			return Process([self.daemonBinPath,\
+			return Process([self.config.daemonBinPath,\
 				"-daemon",\
-				"-datadir={datadir}".format(datadir=self.dataDirPath)] +commandLine)
+				"-datadir={datadir}".format(datadir=self.config.dataDirPath)] +commandLine)
 
 	def runCliSafe(self, commandLine, _retrying=False):
 		
@@ -145,7 +144,7 @@ class BitcoinCapp(object):
 				time.sleep(1)
 		return process
 	def deleteDataFile(self, fileName):
-		filePath = os.path.join(self.dataDirPath, fileName)
+		filePath = os.path.join(self.config.dataDirPath, fileName)
 		if os.path.exists(filePath):
 			if os.path.isdir(filePath):
 				shutil.rmtree(filePath)
@@ -153,10 +152,22 @@ class BitcoinCapp(object):
 				os.remove(filePath)
 	def deleteDataFiles(self, fileNameList):
 		for fileName in fileNameList:
-			self.deleteDataFile(fileName)
+			self.deleteDataFile(fileName7)
 	def deleteBlockchainData(self):
 		self.deleteDataFiles(["blocks", "chainstate", "database", "peers.dat", "banlist.dat"])
 		
 
 	def getBlockCount(self):
 		return int(self.runCliSafe(["getblockcount"]).waitAndGetStdout(timeout=8).decode())
+
+#=======================================================================================
+# Export
+#=======================================================================================
+# The code that's using this plugin will have to know what to call
+# upon, thus you'll have to assign the 'Capp' variable the class
+# that client code is supposed to access (and return a proper BaseCapp extended object.)
+# Do the same for CappConfigSetup and FlavorConfigSetup
+#==========================================================
+Capp = BitcoinCapp
+CappConfigSetup = BitcoinCappConfigSetup
+FlavorConfigSetup = BitcoinFlavorConfigSetup
