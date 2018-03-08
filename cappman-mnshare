@@ -12,7 +12,7 @@ from lib.base import *
 from lib.cappconfig import Defaults
 from lib.capps import Capps
 import lib.plugins
-import plugins.capplibs.dash #TEST: plugin import.
+import plugins.capplibs.capplib_dash #TEST: plugin import.
 
 #=======================================================================================
 # Configuration

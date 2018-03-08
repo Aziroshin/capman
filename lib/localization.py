@@ -6,6 +6,8 @@
 #=======================================================================================
 
 import gettext
+import os
+import sys
 
 #=======================================================================================
 # Library
@@ -38,8 +40,8 @@ class Lang(object):
 		self.localeDirPath = localeDirPath
 		self.language = language
 
-	def gettext(self, string):
+	def gettext(self, string, formatDict={}):
 		"""Wraps around gettext to provide additional features."""
 		if self.translation is None:
-			return string
-		return self.gettext(string)
+			return string.format(**formatDict)
+		return self.gettext(string.format(**formatDict))

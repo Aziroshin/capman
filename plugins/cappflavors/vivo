@@ -1,0 +1,10 @@
+[main]
+capplib=dash
+
+[names]
+configfilename=.vivocore
+
+[paths]
+cli=/usr/local/bin/vivo-cli
+daemon=/usr/local/bin/vivod
+datadir=/home/yawgmoth/coins/vivo/masternodes/1/.vivocore
